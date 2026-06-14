@@ -1,17 +1,18 @@
 #!/bin/bash
 set -x; echo "=== JOB START $(date) ==="
 nvidia-smi --query-gpu=name --format=csv,noheader || true
+apt-get update -qq && apt-get install -y -qq ffmpeg >/dev/null 2>&1; echo FFMPEG_DONE
 export ASSETS=$(pwd)
 pip install -q resemblyzer 2>&1 | tail -1
 cd /workspace 2>/dev/null || cd /root
 git clone --depth 1 https://github.com/Plachtaa/seed-vc 2>&1 | tail -2
 cd seed-vc && pip install -q -r requirements.txt 2>&1 | tail -5
-cp $ASSETS/her_audio.m4a $ASSETS/src_f5.wav $ASSETS/src_cb.wav $ASSETS/ref.wav .
-ls -la her_audio.m4a src_f5.wav src_cb.wav ref.wav
+cp $ASSETS/her_audio.wav $ASSETS/src_f5.wav $ASSETS/src_cb.wav $ASSETS/ref.wav .
+ls -la her_audio.wav src_f5.wav src_cb.wav ref.wav
 mkdir -p data
 python -c "
 import librosa,soundfile as sf,numpy as np
-y,sr=librosa.load('her_audio.m4a',sr=22050,mono=True)
+y,sr=librosa.load('her_audio.wav',sr=22050,mono=True)
 iv=librosa.effects.split(y,top_db=30); buf=[];cur=0;i=0
 for s,e in iv:
     buf.append(y[s:e]);cur+=e-s

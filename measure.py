@@ -2,7 +2,7 @@ import numpy as np, librosa, glob, os, warnings
 warnings.filterwarnings("ignore")
 from resemblyzer import VoiceEncoder, preprocess_wav
 enc=VoiceEncoder(verbose=False)
-y,sr=librosa.load('her_audio.m4a',sr=16000,mono=True)
+y,sr=librosa.load('her_audio.wav',sr=16000,mono=True)
 iv=librosa.effects.split(y,top_db=30)
 segs=[y[s:e] for s,e in iv if (e-s)>2*16000][:8]
 embs=[enc.embed_utterance(preprocess_wav(s,source_sr=16000)) for s in segs]; embs=[e/np.linalg.norm(e) for e in embs]
