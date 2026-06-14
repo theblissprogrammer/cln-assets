@@ -29,7 +29,7 @@ from TTS.demos.xtts_ft_demo.utils.gpt_train import train_gpt
 sig=inspect.signature(train_gpt); print("TRAIN_SIG", sig, flush=True)
 tr=[c for c in glob.glob("ftdata/*train*.csv")] or glob.glob("ftdata/*.csv")
 ev=[c for c in glob.glob("ftdata/*eval*.csv")] or tr
-train_csv, eval_csv = tr[0], ev[0]
+train_csv, eval_csv = os.path.abspath(tr[0]), os.path.abspath(ev[0])  # ABS to avoid load_tts_samples path doubling
 print("USING train=",train_csv,"eval=",eval_csv, flush=True)
 allkw=dict(custom_model="", version="v2.0.2", language="en", num_epochs=12,
            batch_size=3, grad_acumm=84, train_csv=train_csv, eval_csv=eval_csv,
@@ -48,16 +48,19 @@ from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
 def newest(paths): return sorted([p for p in paths if os.path.exists(p)], key=os.path.getmtime)[-1] if paths else None
-cfgs   = glob.glob("ftout/**/config.json", recursive=True)
-config_path = newest(cfgs)
-run_dir = os.path.dirname(config_path) if config_path else "ftout"
-ckpt = newest(glob.glob(run_dir+"/best_model.pth")+glob.glob(run_dir+"/checkpoint_*.pth")+glob.glob(run_dir+"/*.pth")+glob.glob("ftout/**/*.pth", recursive=True))
-vocab = (glob.glob(run_dir+"/vocab.json")+glob.glob("ftout/**/vocab.json", recursive=True)
-         +glob.glob(os.path.expanduser("~/.local/share/tts/**/vocab.json"), recursive=True)
-         +glob.glob("/root/.local/share/tts/**/vocab.json", recursive=True))
-vocab = vocab[0] if vocab else None
-print("ARTIFACTS config=",config_path,"ckpt=",ckpt,"vocab=",vocab, flush=True)
-assert config_path and ckpt and vocab, "missing artifact"
+# base files (architecture + tokenizer) come from original_model_files; FT weights live in the GPT run dir
+base_cfg = glob.glob("ftout/**/XTTS_v2.0_original_model_files/config.json", recursive=True)
+config_path = base_cfg[0] if base_cfg else newest(glob.glob("ftout/**/config.json", recursive=True))
+base_dir = os.path.dirname(config_path)
+vocab = os.path.join(base_dir,"vocab.json")
+if not os.path.exists(vocab):
+    v=glob.glob("ftout/**/vocab.json", recursive=True); vocab=v[0] if v else None
+ft_ckpts=[p for p in glob.glob("ftout/**/*.pth", recursive=True) if "original_model_files" not in p]
+pref=[p for p in ft_ckpts if os.path.basename(p)=="best_model.pth"] or [p for p in ft_ckpts if "checkpoint" in os.path.basename(p)] or ft_ckpts
+ckpt = newest(pref) if pref else os.path.join(base_dir,"model.pth")
+IS_FT = "original_model_files" not in ckpt
+print("ARTIFACTS config=",config_path,"ckpt=",ckpt,"vocab=",vocab,"IS_FINETUNED=",IS_FT, flush=True)
+assert config_path and ckpt and vocab and os.path.exists(ckpt), "missing artifact"
 
 cfg=XttsConfig(); cfg.load_json(config_path)
 model=Xtts.init_from_config(cfg)
