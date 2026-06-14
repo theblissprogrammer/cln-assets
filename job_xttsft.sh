@@ -5,7 +5,7 @@ apt-get update -qq && apt-get install -y -qq ffmpeg >/dev/null 2>&1; echo FFMPEG
 export ASSETS=$(pwd)
 pip install -q "numpy<2" resemblyzer speechbrain 2>&1 | tail -1
 pip install -q coqui-tts 2>&1 | tail -2
-pip install -q "transformers>=4.57,<5.0" faster-whisper 2>&1 | tail -2
+pip install -q "transformers>=4.57,<5.0" faster-whisper pandas 2>&1 | tail -2   # formatter needs pandas
 export COQUI_TOS_AGREED=1
 python -c "import TTS; print('coqui-tts', TTS.__version__)"
 
