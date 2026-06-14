@@ -24,16 +24,19 @@ PY
 
 echo "=== STEP2: train GPT ==="
 python - <<'PY'
-import warnings, glob, os; warnings.filterwarnings("ignore")
+import warnings, glob, os, inspect; warnings.filterwarnings("ignore")
 from TTS.demos.xtts_ft_demo.utils.gpt_train import train_gpt
+sig=inspect.signature(train_gpt); print("TRAIN_SIG", sig, flush=True)
 tr=[c for c in glob.glob("ftdata/*train*.csv")] or glob.glob("ftdata/*.csv")
 ev=[c for c in glob.glob("ftdata/*eval*.csv")] or tr
 train_csv, eval_csv = tr[0], ev[0]
 print("USING train=",train_csv,"eval=",eval_csv, flush=True)
-r = train_gpt(custom_model="", version="v2.0.2", language="en",
-              num_epochs=12, batch_size=3, grad_acumm=84,
-              train_csv=train_csv, eval_csv=eval_csv,
-              output_path=os.path.abspath("ftout"), max_audio_length=255995)
+allkw=dict(custom_model="", version="v2.0.2", language="en", num_epochs=12,
+           batch_size=3, grad_acumm=84, train_csv=train_csv, eval_csv=eval_csv,
+           output_path=os.path.abspath("ftout"), max_audio_length=255995)
+kw={k:v for k,v in allkw.items() if k in sig.parameters}
+print("CALLING train_gpt with", list(kw), flush=True)
+r = train_gpt(**kw)
 print("TRAIN_RET", r, flush=True)
 PY
 
