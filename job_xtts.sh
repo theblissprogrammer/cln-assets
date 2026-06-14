@@ -5,7 +5,7 @@ apt-get update -qq && apt-get install -y -qq ffmpeg >/dev/null 2>&1; echo FFMPEG
 export ASSETS=$(pwd)
 pip install -q "numpy<2" resemblyzer speechbrain 2>&1 | tail -2
 pip install -q coqui-tts 2>&1 | tail -3
-pip install -q "transformers==4.46.2" 2>&1 | tail -2   # 5.x removed isin_mps_friendly that XTTS imports
+pip install -q "transformers>=4.57,<5.0" 2>&1 | tail -2   # coqui-tts 0.27.5 needs >=4.57; <5 keeps isin_mps_friendly
 python -c "import transformers; print('transformers', transformers.__version__)"
 export COQUI_TOS_AGREED=1
 mkdir -p out_xtts
