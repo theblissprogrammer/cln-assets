@@ -3,12 +3,13 @@ set -x; echo "=== COSY JOB START $(date) ==="
 nvidia-smi --query-gpu=name --format=csv,noheader || true
 apt-get update -qq && apt-get install -y -qq ffmpeg sox libsox-dev unzip >/dev/null 2>&1; echo FFMPEG_DONE
 export ASSETS=$(pwd)
-pip install -q "numpy<2" resemblyzer speechbrain faster-whisper 2>&1 | tail -2
+pip install -q "numpy<2" resemblyzer speechbrain faster-whisper openai-whisper 2>&1 | tail -2
 cd /workspace 2>/dev/null || cd /root
 git clone --recursive https://github.com/FunAudioLLM/CosyVoice 2>&1 | tail -3
 cd CosyVoice
 pip install -q -r requirements.txt 2>&1 | tail -5
-pip install -q modelscope 2>&1 | tail -1
+pip install -q modelscope openai-whisper 2>&1 | tail -1   # CosyVoice frontend.py does `import whisper`
+python -c "import whisper; print('whisper OK', whisper.__file__)"
 python -c "from modelscope import snapshot_download; snapshot_download('iic/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')" 2>&1 | tail -3
 cp $ASSETS/her_audio.wav $ASSETS/ref.wav $ASSETS/measure_v2.py .
 mkdir -p out_cosy
