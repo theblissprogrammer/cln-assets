@@ -4,7 +4,7 @@ nvidia-smi --query-gpu=name --format=csv,noheader || true
 apt-get update -qq && apt-get install -y -qq ffmpeg curl >/dev/null 2>&1; echo FFMPEG_DONE
 # chatterbox in an ISOLATED conda env (pins conflict with base)
 conda create -y -n cb python=3.11 2>&1 | tail -2
-conda run -n cb pip install -q chatterbox-tts soundfile librosa "numpy<2" 2>&1 | tail -3
+conda run -n cb pip install -q chatterbox-tts resemble-perth soundfile librosa "numpy<2" 2>&1 | tail -3
 echo "CB_DEPS_DONE"
 conda run -n cb python -c "import torch; print('TORCHCHECK', torch.__version__, 'cuda', torch.cuda.is_available())"
 conda run -n cb python gen_chatterbox.py
