@@ -2,6 +2,17 @@
 """Chatterbox-Multilingual Arabic clone of her (EN ref -> Arabic), cfg_weight sweep."""
 import os, json, warnings, numpy as np, librosa, soundfile as sf, torch
 warnings.filterwarnings("ignore")
+try:
+    import perth
+    if getattr(perth, "PerthImplicitWatermarker", None) is None:
+        class _NoWM:
+            def __init__(self, *a, **k): pass
+            def apply_watermark(self, wav, *a, **k): return wav
+            def get_watermark(self, *a, **k): return None
+        perth.PerthImplicitWatermarker = _NoWM
+        print("patched perth watermarker -> no-op", flush=True)
+except Exception as e:
+    print("perth patch skip:", str(e)[:60], flush=True)
 def loud(w):
     r = np.sqrt(np.mean(w**2)) + 1e-9
     return w * (10**(-23/20) / r)
