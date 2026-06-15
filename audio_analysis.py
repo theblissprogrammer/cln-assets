@@ -26,10 +26,33 @@ try:
     print("[tool] SQUIM loaded",flush=True)
 except Exception as e: print("[tool] SQUIM unavail:",str(e)[:80],flush=True)
 
+SER=None
+try:
+    import torch.nn as nn
+    from transformers import Wav2Vec2Processor
+    from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2Model, Wav2Vec2PreTrainedModel
+    class _Head(nn.Module):
+        def __init__(s,c): super().__init__(); s.dense=nn.Linear(c.hidden_size,c.hidden_size); s.dropout=nn.Dropout(c.final_dropout); s.out_proj=nn.Linear(c.hidden_size,c.num_labels)
+        def forward(s,x): x=s.dropout(x); x=torch.tanh(s.dense(x)); x=s.dropout(x); return s.out_proj(x)
+    class _Emo(Wav2Vec2PreTrainedModel):
+        def __init__(s,c): super().__init__(c); s.wav2vec2=Wav2Vec2Model(c); s.classifier=_Head(c); s.init_weights()
+        def forward(s,x): h=s.wav2vec2(x)[0].mean(1); return s.classifier(h)
+    _SERNAME="audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    _proc=Wav2Vec2Processor.from_pretrained(_SERNAME); _ser=_Emo.from_pretrained(_SERNAME).eval()
+    def _ser_run(w16):
+        x=_proc(w16,sampling_rate=16000,return_tensors="pt").input_values
+        with torch.no_grad(): v=_ser(x)[0].numpy()
+        return float(v[0]),float(v[2])  # arousal, valence (0-1)
+    SER=_ser_run; print("[tool] SER (arousal/valence) loaded",flush=True)
+except Exception as e: print("[tool] SER unavail:",str(e)[:80],flush=True)
+
 def analyze(p):
     o={}
     w,_=librosa.load(p,sr=16000,mono=True); w=w/(np.max(np.abs(w))+1e-9)
     t=torch.tensor(w).float().unsqueeze(0)
+    if SER is not None:
+        try: o["arousal"],o["valence"]=[round(x,3) for x in SER(w)]
+        except Exception as e: o["ser_err"]=str(e)[:30]
     if UT is not None:
         try:
             with torch.no_grad(): o["utmos"]=round(float(UT(t,16000)),3)
