@@ -54,39 +54,41 @@ CH=24000; chunks=[voiced[i:i+CH] for i in range(0,len(voiced)-CH,CH//2)]
 chunks=[loud(c) for c in chunks if len(c)==CH]
 print("her chunks", len(chunks), flush=True)
 vo=Vocos.from_pretrained("charactr/vocos-mel-24khz").to(dev)
-import copy
 gen_vo=Vocos.from_pretrained("charactr/vocos-mel-24khz").to(dev); gen_vo.eval()  # frozen generic copy
-for p in vo.parameters(): p.requires_grad=False
-for p in list(vo.backbone.parameters())+list(vo.head.parameters()): p.requires_grad=True
-opt=torch.optim.AdamW([p for p in vo.parameters() if p.requires_grad], lr=2e-4, betas=(0.8,0.99))
-mrstft=auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=[512,1024,2048],hop_sizes=[128,256,512],win_lengths=[512,1024,2048]).to(dev)
 fe=vo.feature_extractor
-data=torch.tensor(np.stack(chunks)).float().to(dev)
-N=data.shape[0]; STEPS=3000; B=16
-vo.train()
-for step in range(STEPS):
-    idx=torch.randint(0,N,(B,))
-    wav=data[idx]
-    mel=fe(wav)
-    recon=vo.decode(mel)
-    L=min(recon.shape[-1],wav.shape[-1])
-    rec=recon[...,:L]; tgt=wav[...,:L]
-    loss=mrstft(rec.unsqueeze(1),tgt.unsqueeze(1))
-    mel_l1=torch.nn.functional.l1_loss(fe(rec),fe(tgt))
-    total=loss+mel_l1
-    opt.zero_grad(); total.backward(); opt.step()
-    if step%500==0: print(f"voc step {step} mrstft={loss.item():.3f} mel={mel_l1.item():.3f}",flush=True)
-vo.eval()
-# re-vocode XTTS output through HER vocos and GENERIC vocos
-os.makedirs("out_hvoc",exist_ok=True); os.makedirs("out_gvoc",exist_ok=True)
 def revoc(model,p,outdir):
     w,_=librosa.load(p,sr=24000,mono=True); t=torch.tensor(w).float().unsqueeze(0).to(dev)
-    with torch.no_grad(): rec=model.decode(model.feature_extractor(t)).squeeze().cpu().numpy()
-    sf.write(f"{outdir}/{os.path.basename(p)}", rec, 24000)
-for p in glob.glob("out_raw/*.wav"):
-    revoc(vo,p,"out_hvoc"); revoc(gen_vo,p,"out_gvoc")
-# sanity: her real seg through her-vocos
-print("REVOC_DONE",flush=True)
+    with torch.no_grad(): rec=model.head(model.backbone(model.feature_extractor(t))).squeeze().cpu().numpy()
+    sf.write(f"{outdir}/{os.path.basename(p)}", np.nan_to_num(rec), 24000)
+os.makedirs("out_hvoc",exist_ok=True); os.makedirs("out_gvoc",exist_ok=True)
+# GENERIC re-vocode FIRST (always works, independent of fine-tune)
+for p in glob.glob("out_raw/*.wav"): revoc(gen_vo,p,"out_gvoc")
+print("GENERIC_REVOC_DONE",flush=True)
+# fine-tune HER vocos
+try:
+    for p in vo.parameters(): p.requires_grad_(True)
+    opt=torch.optim.AdamW(vo.parameters(), lr=2e-4, betas=(0.8,0.99))
+    mrstft=auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=[512,1024,2048],hop_sizes=[128,256,512],win_lengths=[512,1024,2048]).to(dev)
+    data=torch.tensor(np.stack(chunks)).float().to(dev)
+    N=data.shape[0]; STEPS=3000; B=16
+    vo.train()
+    for step in range(STEPS):
+        idx=torch.randint(0,N,(B,)); wav=data[idx]
+        mel=fe(wav)
+        recon=vo.head(vo.backbone(mel))          # explicit path keeps gradients (decode() runs no_grad)
+        if step==0: print("recon.requires_grad", recon.requires_grad, flush=True)
+        L=min(recon.shape[-1],wav.shape[-1]); rec=recon[...,:L]; tgt=wav[...,:L]
+        loss=mrstft(rec.unsqueeze(1),tgt.unsqueeze(1))
+        mel_l1=torch.nn.functional.l1_loss(fe(rec),fe(tgt))
+        total=loss+mel_l1
+        opt.zero_grad(); total.backward()
+        torch.nn.utils.clip_grad_norm_(vo.parameters(),1.0); opt.step()
+        if step%500==0: print(f"voc step {step} mrstft={loss.item():.3f} mel={mel_l1.item():.3f}",flush=True)
+    vo.eval()
+    for p in glob.glob("out_raw/*.wav"): revoc(vo,p,"out_hvoc")
+    print("HER_REVOC_DONE",flush=True)
+except Exception as e:
+    print("FINETUNE_ERR",repr(e),flush=True)
 PY
 echo "=== MEASURE: raw vs generic-vocos vs HER-vocos (best-of-5) ==="
 echo "--- RAW XTTS ---";        python measure_bon.py out_raw
