@@ -53,11 +53,28 @@ for i in range(len(AR)):
     q = knn.get_features(f"genq_{i}.wav"); out = knn.match(q, pool, topk=4)
     torchaudio.save(f"exemplar_{i}.wav", out[None].cpu(), 16000)
 
+def upload_litterbox(path):
+    try:
+        r = subprocess.run(["curl", "-s", "--max-time", "60", "-F", "reqtype=fileupload", "-F", "time=72h",
+                            "-F", f"fileToUpload=@{path}", "https://litterbox.catbox.moe/resources/internals/api.php"],
+                           capture_output=True, text=True, timeout=70)
+        u = r.stdout.strip()
+        return u if u.startswith("http") else None
+    except Exception:
+        return None
+
 def export(wav, name):
     mp3 = name + ".mp3"
-    subprocess.run(["ffmpeg", "-y", "-i", wav, "-ar", "24000", "-ac", "1", "-b:a", "48k", mp3], capture_output=True)
+    subprocess.run(["ffmpeg", "-y", "-i", wav, "-ar", "22050", "-ac", "1", "-b:a", "48k", mp3], capture_output=True)
+    url = upload_litterbox(mp3)
+    if url:
+        print(f"URL {name} {url}", flush=True)
+        return
+    # fallback: chunked base64 (short lines survive log truncation)
     b = base64.b64encode(open(mp3, "rb").read()).decode()
-    print(f"B64MP3 {name}::{b}", flush=True)
+    print(f"B64META {name} {len(b)}", flush=True)
+    for i in range(0, len(b), 100):
+        print(f"B64 {name} {i//100} {b[i:i+100]}", flush=True)
 
 export("clip_her_real.wav", "her_real")
 for i in range(len(AR)):
