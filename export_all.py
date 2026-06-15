@@ -27,8 +27,7 @@ m = tts.synthesizer.tts_model
 gl, sp = m.get_conditioning_latents(audio_path=sorted(glob.glob("ref_her/*.wav")), max_ref_length=30, gpt_cond_len=30, gpt_cond_chunk_len=6)
 gname = list(m.speaker_manager.speakers.keys())[0]; gi = m.speaker_manager.speakers[gname]
 gl_g, sp_g = gi["gpt_cond_latent"], gi["speaker_embedding"]
-AR = ["سوف نلتقي مرة أخرى يوم الخميس لإنهاء المراجعة.",
-      "مشينا على طول الشاطئ لبعض الوقت نتحدث عن أشياء عادية."]
+AR = ["سوف نلتقي مرة أخرى يوم الخميس لإنهاء المراجعة."]
 for i, t in enumerate(AR):
     o = m.inference(t, "ar", gl, sp, temperature=0.7, enable_text_splitting=True); sf.write(f"synth_{i}.wav", np.asarray(o["wav"]), 24000)
     o = m.inference(t, "ar", gl_g, sp_g, temperature=0.7, enable_text_splitting=True); sf.write(f"genq_{i}.wav", np.asarray(o["wav"]), 24000)
@@ -65,16 +64,17 @@ def upload_litterbox(path):
 
 def export(wav, name):
     mp3 = name + ".mp3"
-    subprocess.run(["ffmpeg", "-y", "-i", wav, "-ar", "22050", "-ac", "1", "-b:a", "48k", mp3], capture_output=True)
+    # trim to <=4s, mono 22k 40kbps (small enough for base64-fallback to fit a log window)
+    subprocess.run(["ffmpeg", "-y", "-t", "4.2", "-i", wav, "-ar", "22050", "-ac", "1", "-b:a", "40k", mp3], capture_output=True)
     url = upload_litterbox(mp3)
     if url:
         print(f"URL {name} {url}", flush=True)
         return
-    # fallback: chunked base64 (short lines survive log truncation)
+    # fallback: chunked base64 (200-char lines survive log truncation; small clips keep total fetchable)
     b = base64.b64encode(open(mp3, "rb").read()).decode()
     print(f"B64META {name} {len(b)}", flush=True)
-    for i in range(0, len(b), 100):
-        print(f"B64 {name} {i//100} {b[i:i+100]}", flush=True)
+    for i in range(0, len(b), 200):
+        print(f"B64 {name} {i//200} {b[i:i+200]}", flush=True)
 
 export("clip_her_real.wav", "her_real")
 for i in range(len(AR)):
