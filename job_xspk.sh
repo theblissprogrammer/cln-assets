@@ -6,7 +6,7 @@ pip install -q "numpy<2" resemblyzer coqui-tts "transformers>=4.57,<5.0" torchau
 export COQUI_TOS_AGREED=1
 mkdir -p donor_raw
 BASE="https://raw.githubusercontent.com/CheyneyComputerScience/CREMA-D/master/AudioWAV"
-for f in 1001_IEO_ANG_HI 1001_TIE_ANG_HI 1001_IOM_ANG_HI 1001_IWW_ANG_HI 1001_TAI_ANG_HI 1001_MTI_ANG_HI 1001_IWL_ANG_HI 1001_ITH_ANG_HI 1001_DFA_ANG_HI 1001_ITS_ANG_HI 1001_TSI_ANG_HI 1001_WSI_ANG_HI; do
+for f in 1001_IEO_ANG_HI 1001_IEO_ANG_MD 1001_IEO_ANG_LO 1001_TIE_ANG_XX 1001_IOM_ANG_XX 1001_IWW_ANG_XX 1001_TAI_ANG_XX 1001_MTI_ANG_XX 1001_IWL_ANG_XX 1001_ITH_ANG_XX 1001_DFA_ANG_XX 1001_ITS_ANG_XX 1001_TSI_ANG_XX 1001_WSI_ANG_XX; do
   curl -sfL "$BASE/$f.wav" -o "donor_raw/$f.wav" && echo "got $f" || { rm -f "donor_raw/$f.wav"; echo "miss $f"; }
 done
 echo "donor clips downloaded: $(ls donor_raw/*.wav 2>/dev/null | wc -l)"
