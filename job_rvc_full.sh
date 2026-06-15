@@ -22,12 +22,12 @@ mkdir -p /workspace/rvc/RVC/logs; cp -rn /tmp/mainrvc/logs/mute /workspace/rvc/R
 echo "RVC_SETUP_DONE"
 echo "=== 3) train her model (150 epochs) ==="
 cp "$ASSETS/her_audio.wav" ./her_full.wav
-python pipeline.py train -m her -a her_full.wav -e 150 -b 8 2>&1 | tail -12
+python pipeline.py train -m her -a her_full.wav -e 100 -b 8 2>&1
 echo "RVC_TRAIN_DONE"
 echo "=== 4) cross-lingual infer ==="
 mkdir -p /workspace/rvc/out_rvc
 for f in /workspace/src/*.wav; do
-  python pipeline.py infer -m her -i "$f" -o "/workspace/rvc/out_rvc/$(basename $f)" --f0-method rmvpe 2>&1 | tail -2
+  python pipeline.py infer -m her -i "$f" -o "/workspace/rvc/out_rvc/$(basename $f)" --f0-method rmvpe 2>&1 | tail -4
 done
 echo "RVC_INFER_DONE"
 echo "=== locate outputs ==="
