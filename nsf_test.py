@@ -22,18 +22,29 @@ def get_mel(w):
     t=torch.from_numpy(w).float().unsqueeze(0).to(dev)
     return stft.get_mel(t)   # [1, num_mels, T]
 
+import inspect
+print("=== GEN API ===", type(gen), flush=True)
+try:
+    print(inspect.signature(gen.forward), flush=True)
+except Exception as e: print("sig err", e, flush=True)
+
 def get_f0(w, T):
-    # parselmouth pitch -> align to mel frames
     snd=parselmouth.Sound(w.astype(np.float64),sampling_frequency=SR)
     p=snd.to_pitch(h.hop_size/SR, 65, 500); f=p.selected_array['frequency']
     f=np.interp(np.linspace(0,1,T), np.linspace(0,1,len(f)), f)
-    # fill unvoiced by interpolation (NSF wants continuous-ish f0; 0 = unvoiced source)
+    vv=f[f>0]
+    rng_in = (np.percentile(st(vv),95)-np.percentile(st(vv),5)) if len(vv)>10 else 0
+    print(f"  [f0 extract] T={T} len_f={len(f)} voiced_frac={np.mean(f>0):.2f} st-range={rng_in:.1f} med={np.median(vv):.0f}Hz", flush=True)
     return f
 
 def render(mel, f0):
-    f0t=torch.from_numpy(f0).float().unsqueeze(0).to(dev)
+    f0t=torch.from_numpy(f0).float().unsqueeze(0).to(dev)  # [1,T]
     with torch.no_grad():
-        y=gen(mel, f0t)
+        try:
+            y=gen(mel, f0t)
+        except Exception as e:
+            print("  [render] gen(mel,f0) failed:",str(e)[:100],"-> trying f0[...,None]",flush=True)
+            y=gen(mel, f0t.unsqueeze(-1))
     return y.squeeze().cpu().numpy()
 
 def f0_scale(f0, scale):
