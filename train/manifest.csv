@@ -1,0 +1,22 @@
+wav,dur,text,f0range,f0dyn,f0med,coupling,declination,voiced_rate
+train/wavs/utt_0000.wav,5.74,"Despite how many times you sin, never despair from Allah's panel to add His mercy,",3.602,42.984,243.343,0.136,-0.518,63.24
+train/wavs/utt_0001.wav,6.14,a young Muslim man who was originally from Saudi Arabia went to travel to England to pursue a bachelor's degree.,18.848,46.171,234.51,0.129,-0.622,75.244
+train/wavs/utt_0002.wav,4.24,Back home he had grown up in a very conservative and religious environment.,10.402,37.398,254.998,0.066,-1.92,81.604
+train/wavs/utt_0003.wav,6.58,"This was the first time he has ever been away from his family and community, and for the first time in his life he experienced complete freedom.",17.626,52.409,233.908,0.16,-1.173,69.453
+train/wavs/utt_0005.wav,3.14,they sat next to each other and interacted extremely freely.,3.363,41.107,232.285,0.065,-0.664,63.694
+train/wavs/utt_0006.wav,4.28,What began as simple conversations soon became easier and more frequent.,8.17,45.495,247.363,0.275,-1.536,67.757
+train/wavs/utt_0007.wav,11.52,"Asking to borrow a pen or a piece of paper turned into regular discussions and social outings. Over time, this young man has developed many relationships with his colleagues, they would go out for meetings, for lunch,",17.143,42.694,234.594,0.162,-0.281,70.486
+train/wavs/utt_0009.wav,4.4,"Lying there on the bed, he thought to himself, I have ruined myself.",18.501,35.39,231.624,0.074,-0.843,64.318
+train/wavs/utt_0011.wav,4.0,"A student happened to notice him and approach him, he said, brother, what's wrong?",19.908,47.332,262.393,0.256,-0.2,69.5
+train/wavs/utt_0013.wav,4.74,"Throughout the journey, the young man continued crying, unable to forgive himself for what he had done.",7.38,47.391,244.742,0.375,-1.247,78.903
+train/wavs/utt_0014.wav,11.44,"When they arrived in Nouriel, the student told him, go home tonight, don't do anything yet, I'll contact you in the morning. The next day, the student sought advice from the respected scholar Abdelaziz ibn Bas.",19.343,51.398,248.271,0.141,-0.412,70.105
+train/wavs/utt_0016.wav,4.12,"He should sincerely repent, seek Allah's forgiveness and turn to the Quran and worship.",19.408,64.65,244.154,0.252,-2.571,74.515
+train/wavs/utt_0017.wav,3.14,"The student immediately called the young man, whose name was Ahmad.",11.477,48.117,248.44,0.217,-2.072,74.841
+train/wavs/utt_0018.wav,5.38,"He conveyed the scholar's advice and told him, do not turn yourself in, Allah does not want this for you.",10.093,45.927,246.884,0.158,-1.053,76.766
+train/wavs/utt_0021.wav,3.22,"As soon as he entered, he sensed that something was completely off.",22.382,61.369,258.329,0.2,-3.745,62.422
+train/wavs/utt_0022.wav,3.0,The atmosphere was completely heavy. The family looked distressed.,16.089,63.079,234.73,0.299,-0.361,62.0
+train/wavs/utt_0024.wav,4.94,"Concerned, his family eventually went to check in on him. The father then led the student to Ahmad's room.",20.928,52.204,247.268,0.289,-1.986,71.862
+train/wavs/utt_0025.wav,4.84,"There, they found Ahmad in Sujood. Allah has taken his soul while he was prostrating.",18.361,53.254,253.731,0.284,-1.288,68.182
+train/wavs/utt_0027.wav,2.3,everyone else is just background noise.,8.133,40.457,231.753,0.247,-2.186,63.913
+train/wavs/utt_0028.wav,1.58,So don't ever be worried.,5.248,29.841,237.092,0.476,-3.141,66.456
+train/wavs/utt_0029.wav,3.32,"If you are in a state where you feel disappointed in yourself,",14.45,56.046,226.638,0.056,0.061,75.0
