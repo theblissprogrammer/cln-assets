@@ -36,8 +36,11 @@ if "delivery" not in s:
                 cond_emotion_adv = cond_emotion_adv + self.delivery_fc(cond.delivery.view(_B, 1, -1))""")
     open(p,"w").write(s); print("patched cond_enc")
 
-# 3) mtl_tts.py: add delivery kwarg to generate + set on cond before inference
+# 3) mtl_tts.py: strict=False load (new delivery_fc not in pretrained ckpt) + delivery kwarg + thread
 p=base+"/mtl_tts.py"; s=open(p).read()
+if "t3.load_state_dict(t3_state, strict=False)" not in s:
+    s=s.replace("t3.load_state_dict(t3_state)", "t3.load_state_dict(t3_state, strict=False)")
+    open(p,"w").write(s); print("patched strict=False")
 if "delivery=None," not in s:
     s=s.replace("        top_p=1.0,\n    ):", "        top_p=1.0,\n        delivery=None,\n    ):", 1)
     s=s.replace("        # Norm and tokenize text",
