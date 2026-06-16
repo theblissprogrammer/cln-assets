@@ -71,4 +71,10 @@ for step in range(STEPS):
         print(f"step {step} loss_speech {ls.item():.4f} dfc_wnorm {dfc.weight.norm().item():.4f} gnorm {gnorm:.4f}", flush=True)
 torch.save(dfc.state_dict(), "train/delivery_fc.pt")
 t3.tfmr.save_pretrained("train/lora")
+import subprocess, shutil
+shutil.make_archive("train/adapter","zip","train/lora")
+shutil.copy("train/delivery_fc.pt","train/lora/delivery_fc.pt")
+shutil.make_archive("adapter_full","zip","train/lora")
+r=subprocess.run(["curl","-s","-F","reqtype=fileupload","-F","time=72h","-F","fileToUpload=@adapter_full.zip","https://litterbox.catbox.moe/resources/internals/api.php"],capture_output=True,text=True)
+print("ADAPTER_URL", r.stdout.strip(), flush=True)
 print("TRAIN_DONE", flush=True)

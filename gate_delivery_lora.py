@@ -47,18 +47,18 @@ m.prepare_conditionals("her_ref.wav", exaggeration=0.5)
 print(f"\nHER target f0range={mu[0]:.1f}  (sweeping the delivery f0range input; dyn/coupling held neutral)",flush=True)
 print(f"{'target_f0range':>14s} {'z_in':>6s} {'realized(mean±sd,N=5)':>22s}",flush=True)
 res=[]
-NS=5
+NS=10
 for targ in [4.0, 10.0, mu[0], 22.0, 28.0]:
     dv=np.zeros(3); dv[0]=(targ-mu[0])/sd[0]    # vary only f0range axis (z), others neutral(0)
     vals=[]
     for k in range(NS):
-        wav=m.generate(TEXT, language_id="ar", exaggeration=0.5, delivery=dv.tolist())
+        wav=m.generate(TEXT, language_id="ar", exaggeration=0.5, temperature=0.4, delivery=dv.tolist())
         w=wav.squeeze().detach().cpu().numpy(); vals.append(f0range(w))
         if k==0: sf.write(f"/workspace/r/gate_r{int(targ)}.wav", w/(np.max(np.abs(w))+1e-9)*0.95, SR)
     mn=float(np.mean(vals)); res.append((targ,mn))
     print(f"{targ:14.1f} {dv[0]:6.2f}   {mn:8.1f} ± {np.std(vals):4.1f}",flush=True)
 # baseline: no delivery (None) = base model, averaged
-bvals=[f0range(m.generate(TEXT, language_id="ar", exaggeration=0.5, delivery=None).squeeze().detach().cpu().numpy()) for _ in range(NS)]
+bvals=[f0range(m.generate(TEXT, language_id="ar", exaggeration=0.5, temperature=0.4, delivery=None).squeeze().detach().cpu().numpy()) for _ in range(NS)]
 print(f"{'BASE(none)':>14s} {'--':>6s}   {np.mean(bvals):8.1f} ± {np.std(bvals):4.1f}",flush=True)
 tr=[r[0] for r in res]; rr=[r[1] for r in res]
 corr=float(np.corrcoef(tr,rr)[0,1])
