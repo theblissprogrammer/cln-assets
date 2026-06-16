@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x; echo "=== NSF-HiFiGAN F0-control de-risk START $(date) ==="
 nvidia-smi --query-gpu=name --format=csv,noheader || true
-pip install -q praat-parselmouth resemblyzer librosa soundfile "numpy<2" 2>&1 | tail -1
+pip install -q praat-parselmouth resemblyzer librosa soundfile matplotlib omegaconf "numpy<2" 2>&1 | tail -1
 echo "DEPS_DONE"
 # nsf_hifigan modules (so-vits-svc) + checkpoint
 git clone -q https://github.com/svc-develop-team/so-vits-svc.git so-vits-svc 2>&1 | tail -1
