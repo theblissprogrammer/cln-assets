@@ -17,7 +17,9 @@ except Exception: pass
 import parselmouth
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 dev="cuda"; m=ChatterboxMultilingualTTS.from_pretrained(device=dev)
-m.t3.cond_enc.delivery_fc.load_state_dict(torch.load("train/delivery_fc.pt")); print("delivery_fc loaded",flush=True)
+m.t3.cond_enc.delivery_fc.load_state_dict(torch.load("train/delivery_fc.pt"))
+_wn=m.t3.cond_enc.delivery_fc.weight.norm().item()
+print(f"delivery_fc loaded, weight-norm={_wn:.4f} (0=untrained/inert)",flush=True)
 norm=json.load(open("train/delivery_norm.json")); mu=np.array(norm["mu"]); sd=np.array(norm["sd"])
 SR=m.sr
 st=lambda hz:12*np.log2(np.maximum(hz,1e-6)/55.0)
@@ -40,18 +42,21 @@ sf.write("her_ref.wav", loud(np.concatenate(buf)[:20*24000]), 24000)
 TEXT="وقفت عند النافذة تنظر إلى الشارع الفارغ. لم تقل شيئًا لوقت طويل. ثم التفتت إليّ وابتسمت."
 m.prepare_conditionals("her_ref.wav", exaggeration=0.5)
 print(f"\nHER target f0range={mu[0]:.1f}  (sweeping the delivery f0range input; dyn/coupling held neutral)",flush=True)
-print(f"{'target_f0range':>14s} {'z_in':>6s} {'realized_f0range':>16s} {'realized_f0dyn':>14s}",flush=True)
+print(f"{'target_f0range':>14s} {'z_in':>6s} {'realized(mean±sd,N=5)':>22s}",flush=True)
 res=[]
+NS=5
 for targ in [4.0, 10.0, mu[0], 22.0, 28.0]:
     dv=np.zeros(3); dv[0]=(targ-mu[0])/sd[0]    # vary only f0range axis (z), others neutral(0)
-    wav=m.generate(TEXT, language_id="ar", exaggeration=0.5, delivery=dv.tolist())
-    w=wav.squeeze().detach().cpu().numpy()
-    rr=f0range(w); res.append((targ,rr))
-    print(f"{targ:14.1f} {dv[0]:6.2f} {rr:16.1f} {f0dyn(w):14.1f}",flush=True)
-    sf.write(f"/workspace/r/gate_r{int(targ)}.wav", w/(np.max(np.abs(w))+1e-9)*0.95, SR)
-# baseline: no delivery (None) = base model
-wav=m.generate(TEXT, language_id="ar", exaggeration=0.5, delivery=None)
-print(f"{'BASE(none)':>14s} {'--':>6s} {f0range(wav.squeeze().detach().cpu().numpy()):16.1f}",flush=True)
+    vals=[]
+    for k in range(NS):
+        wav=m.generate(TEXT, language_id="ar", exaggeration=0.5, delivery=dv.tolist())
+        w=wav.squeeze().detach().cpu().numpy(); vals.append(f0range(w))
+        if k==0: sf.write(f"/workspace/r/gate_r{int(targ)}.wav", w/(np.max(np.abs(w))+1e-9)*0.95, SR)
+    mn=float(np.mean(vals)); res.append((targ,mn))
+    print(f"{targ:14.1f} {dv[0]:6.2f}   {mn:8.1f} ± {np.std(vals):4.1f}",flush=True)
+# baseline: no delivery (None) = base model, averaged
+bvals=[f0range(m.generate(TEXT, language_id="ar", exaggeration=0.5, delivery=None).squeeze().detach().cpu().numpy()) for _ in range(NS)]
+print(f"{'BASE(none)':>14s} {'--':>6s}   {np.mean(bvals):8.1f} ± {np.std(bvals):4.1f}",flush=True)
 tr=[r[0] for r in res]; rr=[r[1] for r in res]
 corr=float(np.corrcoef(tr,rr)[0,1])
 print(f"\nSUMMARY response_corr(target,realized)={corr:.2f}  slope={(rr[-1]-rr[0])/(tr[-1]-tr[0]):.2f}",flush=True)
