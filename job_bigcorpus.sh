@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x; echo "=== BIG-CORPUS DELIVERY-ADAPTER BUILD START $(date) ==="
 nvidia-smi --query-gpu=name --format=csv,noheader || true
-apt-get update -qq && apt-get install -y -qq ffmpeg curl >/dev/null 2>&1; echo FFMPEG_DONE
+apt-get update -qq && apt-get install -y -qq ffmpeg curl build-essential >/dev/null 2>&1; echo FFMPEG_DONE
 # STAGE 1: corpus build in BASE env (whisper+resemblyzer+yt-dlp; base image already has torch+numpy)
 pip install -q resemblyzer openai-whisper yt-dlp praat-parselmouth librosa soundfile "numpy<2" 2>&1 | tail -1
 echo "BASE_DEPS_DONE"
