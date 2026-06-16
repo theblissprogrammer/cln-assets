@@ -53,8 +53,11 @@ for step in range(STEPS):
     tt,sp,ve,cpt,dv=data[order[step%len(data)]]
     cond=T3Cond(speaker_emb=ve, cond_prompt_speech_tokens=cpt,
                 emotion_adv=0.5*torch.ones(1,1,1,device=dev), delivery=dv).to(device=dev)
-    lt,ls=t3.loss(t3_cond=cond, text_tokens=tt, text_token_lens=torch.tensor([tt.size(1)],device=dev),
-                  speech_tokens=sp, speech_token_lens=torch.tensor([sp.size(1)],device=dev))
+    # bypass Chatterbox's buggy t3.loss (no logit transpose); compute speech next-token CE directly
+    out=t3.forward(t3_cond=cond, text_tokens=tt, text_token_lens=torch.tensor([tt.size(1)],device=dev),
+                   speech_tokens=sp, speech_token_lens=torch.tensor([sp.size(1)],device=dev), training=True)
+    logits=out.speech_logits                       # [1, S, V]
+    ls=F.cross_entropy(logits[:, :-1, :].transpose(1,2), sp[:, 1:])  # AR next-token
     opt.zero_grad(); ls.backward(); opt.step()
     if step%50==0:
         gnorm=dfc.weight.grad.norm().item() if dfc.weight.grad is not None else 0
