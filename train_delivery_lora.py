@@ -54,7 +54,7 @@ opt=torch.optim.AdamW(trainables, lr=1e-4)
 t3.train()
 order=list(range(len(data)))
 import random; random.seed(0)
-STEPS=5000
+STEPS=10000
 for step in range(STEPS):
     if step%len(data)==0: random.shuffle(order)
     tt,sp,ve,cpt,dv=data[order[step%len(data)]]
