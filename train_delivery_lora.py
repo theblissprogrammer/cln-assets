@@ -17,7 +17,7 @@ from chatterbox.models.t3.modules.cond_enc import T3Cond
 S3_SR=16000; dev="cuda"
 m=ChatterboxMultilingualTTS.from_pretrained(device=dev); t3=m.t3
 from peft import LoraConfig, get_peft_model
-lconf=LoraConfig(r=8, lora_alpha=16, lora_dropout=0.05, bias="none",
+lconf=LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, bias="none",
                  target_modules=["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"])
 t3.tfmr=get_peft_model(t3.tfmr, lconf)
 print("LoRA wrapped T3 backbone",flush=True)
@@ -46,7 +46,7 @@ for r in rows:
         data.append((tt, sp, ve, cpt, torch.tensor(dv,dtype=torch.float32,device=dev).view(1,1,-1)))
     except Exception as e:
         print("skip utt:", str(e)[:80], flush=True)
-print(f"prepared {len(data)} utterances", flush=True)
+print(f"prepared {len(data)} utterances (~{5000/max(len(data),1):.1f} epochs at 5000 steps)", flush=True)
 
 trainables=[p for p in t3.parameters() if p.requires_grad]
 print("total trainable tensors:", len(trainables), "params:", sum(p.numel() for p in trainables), flush=True)
@@ -54,7 +54,7 @@ opt=torch.optim.AdamW(trainables, lr=1e-4)
 t3.train()
 order=list(range(len(data)))
 import random; random.seed(0)
-STEPS=800
+STEPS=5000
 for step in range(STEPS):
     if step%len(data)==0: random.shuffle(order)
     tt,sp,ve,cpt,dv=data[order[step%len(data)]]
